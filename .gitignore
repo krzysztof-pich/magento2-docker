@@ -1,0 +1,15 @@
+# Allow everything by default
+!*
+
+# Ignore specific data directories
+/data/opensearch/data/*
+/data/rabbitmq/data/*
+/data/redis/cache/*
+
+# But keep .gitkeep files in these directories
+!/data/opensearch/data/.gitkeep
+!/data/rabbitmq/data/.gitkeep
+!/data/redis/cache/.gitkeep
+
+# IDE specific
+.idea

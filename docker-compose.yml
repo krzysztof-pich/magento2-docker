@@ -1,0 +1,87 @@
+services:
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: magento-native-docker-nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./image/nginx/conf.d/:/etc/nginx/conf.d/
+      - ../magento:/var/www
+      - "phpsocket:/var/run"
+    networks:
+      magento:
+        aliases:
+          - nginx.magento2-native.docker
+  php:
+    build: ./image/php
+    container_name: magento-native-docker-php
+    working_dir: /var/www
+    volumes:
+      - ../magento:/var/www
+      - "phpsocket:/var/run"
+    networks:
+      magento:
+        aliases:
+          - php.magento2-native.docker
+  opensearch:
+    hostname: opensearch.magento2-native.docker
+    image: 'magento/magento-cloud-docker-opensearch:2.12-1.3.7'
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    environment:
+      - cluster.name=docker-cluster
+      - discovery.type=single-node
+      - discovery.seed_hosts=opensearch
+      - bootstrap.memory_lock=true
+      - DISABLE_SECURITY_PLUGIN=true
+    networks:
+      magento:
+        aliases:
+          - opensearch.magento2-native.docker
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: magento-native-docker-rabbitmq
+    environment:
+      - "RABBITMQ_DEFAULT_PASS=root"
+      - "RABBITMQ_DEFAULT_USER=root"
+      - "RABBITMQ_DEFAULT_VHOST='/'"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - './data/rabbitmq/data/:/var/lib/rabbitmq/mnesia/'
+    networks:
+      magento:
+        aliases:
+          - rabbitmq.magento2-native.docker
+  redis:
+    image: redis:6.2-alpine
+    container_name: magento-native-docker-redis
+    ports:
+      - '6379:6379'
+    command: redis-server --save 20 1 --loglevel warning --requirepass somepassrequired123
+    volumes:
+      - ./data/redis/cache:/data
+    networks:
+      magento:
+        aliases:
+          - redis.magento2-native.docker
+  mailhog:
+    image: mailhog/mailhog
+    container_name: magento-native-docker-mailhog
+    logging:
+      driver: 'none'  # disable saving logs
+    ports:
+      - 1025:1025 # smtp server
+      - 8025:8025 # web ui
+    networks:
+      magento:
+        aliases:
+          - mailhog.magento2-native.docker
+networks:
+  magento:
+    driver: bridge
+volumes:
+  phpsocket:
